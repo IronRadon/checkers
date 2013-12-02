@@ -4,16 +4,7 @@ class Piece
   def initialize(board, pos, color) #pos will be an array of two elements
     @board, @position, @color = board, pos, color
     @king = :false
-  end
-
-  #incomPLETE! DON'T TEST IT YET OMG
-  def perform_slide(end_pos)
-    return false unless valid_move?(end_pos)
-    @board.grid[position[0]][position[1]] = nil #remove piece from old pos
-    @board.grid[end_pos[0]][end_pos[1]] = self #move piece on board
-    self.position = end_pos
-    self.maybe_promote
-    true
+    @board.grid[pos[0]][pos[1]] = self
   end
 
   def move_shifts
@@ -28,19 +19,60 @@ class Piece
     move_shifts
   end
 
+  def perform_slide(end_pos)
+    return false unless valid_slide?(end_pos)
+    @board[position] = nil
+    @board[end_pos] = self
+    self.position = end_pos
+    self.maybe_promote
+    true
+  end
+
+  def valid_slide?(end_pos)
+    if self.board.occupied?(end_pos) || !slides.include?(end_pos)
+      return false
+    else
+      return true
+    end
+  end
+
   def slides
     slides = []
     move_shifts.each do |shift|
       potential_move = [@position[0] + shift[0], @position[1] + shift[1]]
-      unless (board.occupied?(potential_move) && board.on_board?(self))
+      unless (board.occupied?(potential_move) && board.on_board?(potential_move))
         slides << potential_move
       end
     end
     slides
   end
 
-  def valid_move?(end_pos) #currently for slide moves only
-    if self.board.occupied?(end_pos) || !slides.include?(end_pos)
+  def perform_jump(end_pos)
+    return false unless valid_jump?(end_pos)
+    jump_shift = [end_pos[0] - position[0], end_pos[1] - position[1]]
+    @board[position] = nil
+    @board.grid[position[0] + jump_shift[0]][position[1] + jump_shift[0]] = nil
+    @board[end_pos] = self
+    self.position = end_pos
+    self.maybe_promote
+    true
+  end
+
+  def jumps
+    jumps = []
+    move_shifts.each do |shift|
+      potential_jump = [@position[0] + shift[0]*2, @position[1] + shift[1]*2]
+      jumped_pos = [@position[0] + shift[0], @position[1] + shift[1]]
+      jumped_piece = board[jumped_pos]
+      if board.occupied?(jumped_pos) && jumped_piece.color != @color
+        jumps << potential_jump
+      end
+    end
+    jumps
+  end
+
+  def valid_jump?(end_pos)
+    if self.board.occupied?(end_pos) || !jumps.include?(end_pos)
       return false
     else
       return true
