@@ -1,3 +1,5 @@
+class InvalidMoveError < ArgumentError
+end
 class Piece
   attr_accessor :board, :position, :color, :king
 
@@ -49,13 +51,21 @@ class Piece
 
   def perform_jump(end_pos)
     return false unless valid_jump?(end_pos)
-    jump_shift = [end_pos[0] - position[0], end_pos[1] - position[1]]
-    @board[position] = nil
+    jump_shift = [(end_pos[0] - position[0])/2, (end_pos[1] - position[1])/2]
     @board.grid[position[0] + jump_shift[0]][position[1] + jump_shift[0]] = nil
+    @board[position] = nil
     @board[end_pos] = self
     self.position = end_pos
     self.maybe_promote
     true
+  end
+
+  def valid_jump?(end_pos)
+    if self.board.occupied?(end_pos) || !jumps.include?(end_pos)
+      return false
+    else
+      return true
+    end
   end
 
   def jumps
@@ -71,13 +81,6 @@ class Piece
     jumps
   end
 
-  def valid_jump?(end_pos)
-    if self.board.occupied?(end_pos) || !jumps.include?(end_pos)
-      return false
-    else
-      return true
-    end
-  end
 
   def maybe_promote
     if self.color == :black && self.position[0] == 7
@@ -88,5 +91,41 @@ class Piece
     end
   end
 
+  def dup
+    Piece.new(board, position.dup, color)
+  end
 
+  def perform_moves!(move_sequence)
+    if move_sequence.count == 1
+      unless perform_slide(move_sequence[0]) || perform_jump(move_sequence[0])
+      raise InvalidMoveError.new("Bad move")
+      end
+    else
+      move_sequence.each do |move|
+        unless perform_jump(move)
+          raise InvalidMoveError.new("Bad jump")
+        end
+      end
+    end
+  end
+
+  def valid_move_seq?(move_sequence)
+    begin
+      dup_board = @board.dup
+      dup_board[@position].perform_moves!(move_sequence)
+    rescue InvalidMoveError => e
+      puts e.message
+      return false
+    else
+      true
+    end
+  end
+
+  def perform_moves(move_sequence)
+    if valid_move_seq?(move_sequence)
+      perform_moves!(move_sequence)
+    else
+      raise InvalidMoveError.new("Bad move")
+    end
+  end
 end

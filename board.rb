@@ -23,4 +23,14 @@ class Board
     @grid[x][y] = piece
   end
 
+  def dup
+    board_dup = Board.new
+    grid.each_with_index do |row, row_index|
+      row.each_with_index do |piece, col_index|
+        next if piece.nil?
+        board_dup[[row_index, col_index]] = piece.dup
+      end
+    end
+    board_dup
+  end
 end
