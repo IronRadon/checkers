@@ -1,5 +1,6 @@
 class InvalidMoveError < ArgumentError
 end
+
 class Piece
   attr_accessor :board, :position, :color, :king
 
@@ -31,7 +32,7 @@ class Piece
   end
 
   def valid_slide?(end_pos)
-    if self.board.occupied?(end_pos) || !slides.include?(end_pos)
+    if !slides.include?(end_pos) #self.board.occupied?(end_pos)
       return false
     else
       return true
@@ -61,7 +62,7 @@ class Piece
   end
 
   def valid_jump?(end_pos)
-    if self.board.occupied?(end_pos) || !jumps.include?(end_pos)
+    if !jumps.include?(end_pos)
       return false
     else
       return true
@@ -74,7 +75,10 @@ class Piece
       potential_jump = [@position[0] + shift[0]*2, @position[1] + shift[1]*2]
       jumped_pos = [@position[0] + shift[0], @position[1] + shift[1]]
       jumped_piece = board[jumped_pos]
-      if board.occupied?(jumped_pos) && jumped_piece.color != @color
+      if board.occupied?(jumped_pos) &&
+        jumped_piece.color != @color &&
+        !board.occupied?(potential_jump)
+
         jumps << potential_jump
       end
     end
@@ -128,4 +132,22 @@ class Piece
       raise InvalidMoveError.new("Bad move")
     end
   end
+
+  def display
+    if color == :black
+      if @king == :true
+        "\u265A"
+      else
+        "\u26C2"
+      end
+    elsif color == :white
+      if @king ==:true
+        "\u2654"
+      else
+        "\u26C0"
+      end
+    end
+  end
+
+
 end
